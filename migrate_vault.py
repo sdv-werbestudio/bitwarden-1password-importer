@@ -51,44 +51,54 @@ def translate(item: Dict[str, Any]) -> Dict[str, Any]:
     """Translates a single item from Bitwarden's format into 1Password's format."""
 
     if item["type"] == 1:
-        return translate_login(item)
+        translated_item = translate_login(item)
     elif item["type"] == 2:
-        return translate_secure_note(item)
+        translated_item = translate_secure_note(item)
     elif item["type"] == 3:
-        return translate_card(item)
+        translated_item = translate_card(item)
     elif item["type"] == 4:
-        return translate_identity(item)
+        translated_item = translate_identity(item)
+
     else:
         raise ValueError(f"Item type {item['type']} is not supported.")
 
+    append_custom_fields(item, translated_item)
+
+    return translated_item
+
 
 def translate_login(item: Dict[str, Any]) -> Dict[str, Any]:
-    fields = [
-        {
-            "id": "username",
-            "type": "STRING",
-            "purpose": "USERNAME",
-            "label": "username",
-            "value": item["login"]["username"],
-        },
-        {
-            "id": "password",
-            "type": "CONCEALED",
-            "purpose": "PASSWORD",
-            "label": "password",
-            "value": item["login"]["password"],
-        },
-        {
-            "id": "notesPlain",
-            "type": "STRING",
-            "purpose": "NOTES",
-            "label": "notes",
-            "value": item["notes"],
-        },
-    ]
+    translated_login = {
+        "title": item["name"],
+        "category": "LOGIN",
+        "fields": [
+            {
+                "id": "username",
+                "type": "STRING",
+                "purpose": "USERNAME",
+                "label": "username",
+                "value": item["login"]["username"],
+            },
+            {
+                "id": "password",
+                "type": "CONCEALED",
+                "purpose": "PASSWORD",
+                "label": "password",
+                "value": item["login"]["password"],
+            },
+            {
+                "id": "notesPlain",
+                "type": "STRING",
+                "purpose": "NOTES",
+                "label": "notes",
+                "value": item["notes"],
+            },
+        ],
+        "urls": [{"href": uri["uri"]} for uri in item["login"]["uris"]],
+    }
 
     if item["login"].get("totp"):
-        fields.append(
+        translated_login["fields"].append(
             {
                 "id": "totp",
                 "type": "OTP",
@@ -96,25 +106,24 @@ def translate_login(item: Dict[str, Any]) -> Dict[str, Any]:
             }
         )
 
-    fields += translate_custom_fields(item.get("fields", []))
-
-    translated_login = {
-        "title": item["name"],
-        "category": "LOGIN",
-        "sections": [
-            {"id": "custom_fields", "label": "Custom Fields"},
-        ]
-        if item.get("fields")
-        else [],
-        "fields": fields,
-        "urls": [{"href": uri["uri"]} for uri in item["login"]["uris"]],
-    }
-
     return translated_login
 
 
 def translate_secure_note(item: Dict[str, Any]) -> Dict[str, Any]:
-    translated_secure_note = {}
+    translated_secure_note = {
+        "title": item["name"],
+        "category": "SECURE_NOTE",
+        "fields": [
+            {
+                "id": "notesPlain",
+                "type": "STRING",
+                "purpose": "NOTES",
+                "label": "Notes",
+                "value": item["notes"],
+            }
+        ],
+    }
+
     return translated_secure_note
 
 
@@ -128,10 +137,12 @@ def translate_identity(item: Dict[str, Any]) -> Dict[str, Any]:
     return translated_identity
 
 
-def translate_custom_fields(fields: List[Dict[str, Any]]) -> List[Dict[str, Any]]:
+def append_custom_fields(item: Dict[str, Any], translated_item: Dict[str, Any]) -> None:
+    """Translates and appends custom fields to an item."""
+
     translated_fields = []
 
-    for field in fields:
+    for field in item.get("fields", []):
         if field["type"] == 3:
             continue  # skip "verknüpfte" fields
 
@@ -146,7 +157,13 @@ def translate_custom_fields(fields: List[Dict[str, Any]]) -> List[Dict[str, Any]
             }
         )
 
-    return translated_fields
+    if translated_fields:
+        if "sections" not in translated_item:
+            translated_item["sections"] = []
+        translated_item["sections"].append(
+            {"id": "custom_fields", "label": "Custom Fields"}
+        )
+        translated_item["fields"] += translated_fields
 
 
 def dump_item(item: Dict[str, Any], filename: str) -> None:
