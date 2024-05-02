@@ -128,7 +128,52 @@ def translate_secure_note(item: Dict[str, Any]) -> Dict[str, Any]:
 
 
 def translate_card(item: Dict[str, Any]) -> Dict[str, Any]:
-    translated_card = {}
+    translated_card = {
+        "title": item["name"],
+        "category": "CREDIT_CARD",
+        "fields": [
+            {
+                "id": "notesPlain",
+                "type": "STRING",
+                "purpose": "NOTES",
+                "label": "notes",
+                "value": item["notes"],
+            },
+            {
+                "id": "cardholder",
+                "type": "STRING",
+                "label": "cardholder name",
+                "value": item["card"]["cardholderName"],
+            },
+            {
+                "id": "type",
+                "type": "CREDIT_CARD_TYPE",
+                "label": "type",
+                "value": item["card"]["brand"],
+            },
+            {
+                "id": "ccnum",
+                "type": "CREDIT_CARD_NUMBER",
+                "label": "number",
+                "value": item["card"]["number"],
+            },
+            {
+                "id": "cvv",
+                "type": "CONCEALED",
+                "label": "verification number",
+                "value": item["card"]["code"],
+            },
+            {
+                "id": "expiry",
+                "type": "MONTH_YEAR",
+                "label": "expiry date",
+                "value": translate_month_year_field(
+                    item["card"]["expMonth"], item["card"]["expYear"]
+                ),
+            },
+        ],
+    }
+
     return translated_card
 
 
@@ -164,6 +209,26 @@ def append_custom_fields(item: Dict[str, Any], translated_item: Dict[str, Any]) 
             {"id": "custom_fields", "label": "Custom Fields"}
         )
         translated_item["fields"] += translated_fields
+
+
+def translate_month_year_field(month, year) -> str:
+    """Translate a month and year field into 1Password's format.
+
+    Args:
+        month: the number of the month
+        year: the number of the year
+
+    Returns:
+        str: Format "YYYY/MM
+    """
+
+    month = str(month).zfill(2)
+    year = str(year)
+    if len(year) <= 2:
+        year = f"20{year.zfill(2)}"
+    elif len(year) != 4:
+        raise ValueError(f"Invalid year: {year}")
+    return f"{year}/{month}"
 
 
 def dump_item(item: Dict[str, Any], filename: str) -> None:
