@@ -394,34 +394,39 @@ if __name__ == "__main__":
 
     print("Importing items...")
     for item in tqdm(items):
-        # dump item to file in bitwarden format
-        if args.dump:
-            filename = "".join(
-                c for c in item["name"] if c.isalnum() or c == " "
-            ).rstrip()
-            dump_item(item, f"data/bitwarden_items/{filename}.json")
-
-        # translate item to 1password format
         try:
-            translated_item = translate(item)
-        except KeyError as e:
-            print(f"ERROR: Item {item.get('name', '')} has no {e}. Skipping.")
-            continue
+            # dump item to file in bitwarden format
+            if args.dump:
+                filename = "".join(
+                    c for c in item["name"] if c.isalnum() or c == " "
+                ).rstrip()
+                dump_item(item, f"data/bitwarden_items/{filename}.json")
 
-        # dump item to file in 1password format
-        if args.dump:
-            dump_item(translated_item, f"data/1password_items/{filename}.json")
-
-        # import item and its attachments into 1password
-        if not args.dry_run:
+            # translate item to 1password format
             try:
-                item_id = import_item(translated_item, args.vault)
-            except RuntimeError as e:
-                print(
-                    f"ERROR: Could not import item {item.get('name', '')} ({e}). Skipping."
-                )
+                translated_item = translate(item)
+            except KeyError as e:
+                print(f"ERROR: Item {item.get('name', '')} has no {e}. Skipping.")
                 continue
-            import_attachments(item.get("attachments", []), item_id)
+
+            # dump item to file in 1password format
+            if args.dump:
+                dump_item(translated_item, f"data/1password_items/{filename}.json")
+
+            # import item and its attachments into 1password
+            if not args.dry_run:
+                try:
+                    item_id = import_item(translated_item, args.vault)
+                except RuntimeError as e:
+                    print(
+                        f"ERROR: Could not import item {item.get('name', '')} ({e}). Skipping."
+                    )
+                    continue
+                import_attachments(item.get("attachments", []), item_id)
+            
+        except Exception as e:
+            print(f"ERROR: Unexpected error ({e}). Skipping item {item.get('name', '')}")
+            continue
 
     if args.cleanup:
         print("Cleaning up...")
