@@ -178,7 +178,88 @@ def translate_card(item: Dict[str, Any]) -> Dict[str, Any]:
 
 
 def translate_identity(item: Dict[str, Any]) -> Dict[str, Any]:
-    translated_identity = {}
+    translated_identity = {
+        "title": item["name"],
+        "category": "IDENTITY",
+        "sections": [
+            {"id": "address", "label": "Address"},
+            {"id": "name", "label": "Identification"},
+            {"id": "internet", "label": "Internet Details"},
+        ],
+        "fields": [
+            {
+                "id": "notesPlain",
+                "type": "STRING",
+                "purpose": "NOTES",
+                "label": "notes",
+                "value": item["notes"],
+            },
+            {
+                "id": "title",
+                "section": {"id": "name", "label": "Identification"},
+                "type": "STRING",
+                "label": "title",
+                "value": item["identity"]["title"],
+            },
+            {
+                "id": "firstname",
+                "section": {"id": "name", "label": "Identification"},
+                "type": "STRING",
+                "label": "first name",
+                "value": item["identity"]["firstName"],
+            },
+            {
+                "id": "middlename",
+                "section": {"id": "name", "label": "Identification"},
+                "type": "STRING",
+                "label": "middle name",
+                "value": item["identity"]["middleName"],
+            },
+            {
+                "id": "lastname",
+                "section": {"id": "name", "label": "Identification"},
+                "type": "STRING",
+                "label": "last name",
+                "value": item["identity"]["lastName"],
+            },
+            {
+                "id": "company",
+                "section": {"id": "name", "label": "Identification"},
+                "type": "STRING",
+                "label": "company",
+                "value": item["identity"]["company"],
+            },
+            {
+                "id": "address",
+                "section": {"id": "address", "label": "Address"},
+                "type": "STRING",
+                "label": "address",
+                "value": translate_address_field(item),
+            },
+            {
+                "id": "phone",
+                "section": {"id": "address", "label": "Address"},
+                "type": "PHONE",
+                "label": "phone",
+                "value": item["identity"]["phone"],
+            },
+            {
+                "id": "username",
+                "section": {"id": "internet", "label": "Internet Details"},
+                "type": "STRING",
+                "label": "username",
+                "value": item["identity"]["username"],
+            },
+            {
+                "id": "email",
+                "section": {"id": "internet", "label": "Internet Details"},
+                "type": "STRING",
+                "label": "email",
+                "value": item["identity"]["email"],
+            },
+        ],
+    }
+
     return translated_identity
 
 
@@ -229,6 +310,27 @@ def translate_month_year_field(month, year) -> str:
     elif len(year) != 4:
         raise ValueError(f"Invalid year: {year}")
     return f"{year}/{month}"
+
+
+def translate_address_field(item: Dict[str, Any]) -> str:
+    """Translate the address field of an identity item into 1Password's format."""
+    address1 = str(item["identity"]["address1"])
+    address2 = str(item["identity"]["address2"])
+    address3 = str(item["identity"]["address3"])
+    city = str(item["identity"]["city"])
+    postal_code = str(item["identity"]["postalCode"])
+    state = str(item["identity"]["state"])
+    country = str(item["identity"]["country"])
+
+    return "\n".join(
+        [
+            address1,
+            address2,
+            address3,
+            f"{city} {postal_code}",
+            f"{state}, {country}",
+        ]
+    )
 
 
 def dump_item(item: Dict[str, Any], filename: str) -> None:
