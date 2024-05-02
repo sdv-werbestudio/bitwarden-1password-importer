@@ -302,6 +302,9 @@ def translate_month_year_field(month, year) -> str:
     Returns:
         str: Format "YYYY/MM
     """
+    
+    if not month or not year:
+        return ""
 
     month = str(month).zfill(2)
     year = str(year)
@@ -314,23 +317,19 @@ def translate_month_year_field(month, year) -> str:
 
 def translate_address_field(item: Dict[str, Any]) -> str:
     """Translate the address field of an identity item into 1Password's format."""
-    address1 = str(item["identity"]["address1"])
-    address2 = str(item["identity"]["address2"])
-    address3 = str(item["identity"]["address3"])
-    city = str(item["identity"]["city"])
-    postal_code = str(item["identity"]["postalCode"])
-    state = str(item["identity"]["state"])
-    country = str(item["identity"]["country"])
+    lines = []
+    if item["identity"]["address1"]:
+        lines.append(item["identity"]["address1"])
+    if item["identity"]["address2"]:
+        lines.append(item["identity"]["address2"])
+    if item["identity"]["address3"]:
+        lines.append(item["identity"]["address3"])
+    if item["identity"]["city"] or item["identity"]["postalCode"]:
+        lines.append(f"{item['identity']['city']} {item['identity']['postalCode']}")
+    if item["identity"]["state"] or item["identity"]["country"]:
+        lines.append(f"{item['identity']['state']}, {item['identity']['country']}")
 
-    return "\n".join(
-        [
-            address1,
-            address2,
-            address3,
-            f"{city} {postal_code}",
-            f"{state}, {country}",
-        ]
-    )
+    return "\n".join(lines)
 
 
 def dump_item(item: Dict[str, Any], filename: str) -> None:
