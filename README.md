@@ -25,7 +25,14 @@ For advanced options see `python migrate_vault.py --help`.
 ###  Importing your personal Vault
 To import your personal Bitwarden vault into 1Password on macOS, you can use the `migrate_personal_vault.sh` command line script. It will install the necessary dependencies and run the migration script with the correct parameters. To use it, simply run:
 ```console
-curl -L https://github.com/sdv-werbestudio/bitwarden-1password-importer/archive/main.zip -o importer.zip && unzip -qq importer.zip && chmod +x bitwarden-1password-importer-main/migrate_personal_vault.sh && clear && ./bitwarden-1password-importer-main/migrate_personal_vault.sh && rm -rf importer.zip bitwarden-1password-importer-main
+curl -L https://github.com/sdv-werbestudio/bitwarden-1password-importer/archive/main.zip -o importer.zip && \
+unzip -qq importer.zip && \
+cd bitwarden-1password-importer-main && \
+chmod +x migrate_personal_vault.sh && \
+clear && \
+./migrate_personal_vault.sh && \
+cd .. && \
+rm -rf importer.zip bitwarden-1password-importer-main
 ```
 
 To manually import your personal vault, you can use:
