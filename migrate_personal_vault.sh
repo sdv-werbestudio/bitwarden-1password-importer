@@ -54,7 +54,7 @@ if ! bw unlock --check; then
 fi
 
 # Authenticate 1Password
-until [[ $(op account list | wc -l) -ge 1 ]]; do
+until [[ $(op account list | wc -l) -ge 2 ]]; do
     clear
     echo ""
     echo "Bitte aktiviere die 1Password-CLI integration:"
@@ -67,7 +67,7 @@ until [[ $(op account list | wc -l) -ge 1 ]]; do
     read -p "Drücke Enter, wenn du fertig bist..."
 done
 clear
-if [[ $(op account list | wc -l) -ge 2 ]]; then
+if [[ $(op account list | wc -l) -ge 3 ]]; then
     echo ""
     echo "Bitte wähle, welcher 1Password-Account verwendet werden soll:"
     echo ""
