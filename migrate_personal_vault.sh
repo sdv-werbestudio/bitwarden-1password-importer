@@ -1,6 +1,9 @@
 #!/bin/bash
 # This script installs all necessary dependencies and runs the migrate_vault.py script on macOS.
 
+# Silence deprecation warnings
+export NODE_OPTIONS="--no-deprecation"
+
 clear
 echo ""
 echo "Dieses Skript importiert deine Passwörter, Notizen, etc. aus deinem Bitwarden-Tresor in deinen perönlichen 1Password-Vault."
@@ -29,23 +32,23 @@ source .venv/bin/activate
 pip3 install -r requirements.txt
 
 # Authenticate Bitwarden
-if ! bw login --check 2>/dev/null; then
+if ! bw login --check; then
     clear
     echo ""
     echo "Bitte authentifiziere dich bei Bitwarden:"
     echo ""
     echo "Hinweis: Um deine client_id und client_secret zu finden, gehe auf https://vault.bitwarden.com/#/settings/security/security-keys und klicke unten auf 'API-Schlüssel anzeigen'."
     echo ""
-    until bw login --apikey 2>/dev/null; do
+    until bw login --apikey; do
         echo ""
     done
     export BW_SESSION=""
 fi
-if ! bw unlock --check 2>/dev/null; then
+if ! bw unlock --check; then
     clear
     echo ""
     echo "Bitte entsperre deinen Bitwarden-Tresor:"
-    until export BW_SESSION=$(bw unlock --raw 2>/dev/null); do
+    until export BW_SESSION=$(bw unlock --raw); do
         echo ""
     done
 fi
@@ -89,6 +92,6 @@ echo ""
 echo "Der Import wurde erfolgreich abgeschlossen!"
 
 # Clean up
-bw lock 2>/dev/null
+bw lock
 deactivate
 rm -rf .venv
