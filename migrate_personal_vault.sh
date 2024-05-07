@@ -24,6 +24,8 @@ brew install python bitwarden-cli 1password-cli
 # Install python dependencies
 echo "Installing Python dependencies..."
 read -p "Drücke Enter, um fortzufahren..." # TODO: Remove this line
+python3 -m venv .venv
+source .venv/bin/activate
 pip3 install -r requirements.txt
 
 # Run Python script
