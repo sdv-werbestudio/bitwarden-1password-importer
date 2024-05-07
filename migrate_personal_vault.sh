@@ -79,7 +79,7 @@ fi
 # Run Python script
 clear
 echo ""
-if ! python3 migrate_vault.py --dry-run null $ACCOUNT_ID Employee; then
+if ! python3 migrate_vault.py null $ACCOUNT_ID Employee; then
     echo ""
     echo "Es ist ein Fehler Aufgetreten! Bitte kontaktiere einen Administrator."
     exit 1
