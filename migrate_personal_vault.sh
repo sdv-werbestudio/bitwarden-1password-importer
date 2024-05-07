@@ -16,15 +16,10 @@ echo "Updating Homebrew..."
 read -p "Drücke Enter, um fortzufahren..." # TODO: Remove this line
 brew update
 
-# Install Python
+# Install Dependencies
 echo "Installing Python, Bitwarden CLI, and 1Password CLI..."
 read -p "Drücke Enter, um fortzufahren..." # TODO: Remove this line
 brew install python bitwarden-cli 1password-cli
-
-# Install pip
-echo "Installing pip..."
-read -p "Drücke Enter, um fortzufahren..." # TODO: Remove this line
-curl https://bootstrap.pypa.io/get-pip.py | python3
 
 # Install python dependencies
 echo "Installing Python dependencies..."
