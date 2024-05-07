@@ -44,11 +44,20 @@ def parse_args() -> Namespace:
 def fetch_items(collection_id: str) -> List[Dict[str, Any]]:
     """Fetches all items within a collection using the Bitwarden CLI."""
 
-    items = subprocess.check_output(
+    fetch_process = subprocess.Popen(
         ["bw", "list", "items", f"--collectionid={collection_id}"],
+        stdout=subprocess.PIPE,
+        stderr=subprocess.PIPE,
+        text=True,
     )
-    items = json.loads(items)
-    return items
+    stdout, stderr = fetch_process.communicate()
+
+    if fetch_process.returncode != 0:
+        print("ERROR: Failed to fetch items.")
+        print(stderr)
+        exit(1)
+
+    return json.loads(stdout)
 
 
 def translate(item: Dict[str, Any]) -> Dict[str, Any]:
@@ -348,7 +357,7 @@ def import_item(item: Dict[str, Any], vault: str) -> str:
     """Imports an item into 1Password."""
 
     item_json = json.dumps(item, indent=None)
-    stdout, stderr = subprocess.Popen(
+    import_process = subprocess.Popen(
         [
             "op",
             "--account",
@@ -364,9 +373,10 @@ def import_item(item: Dict[str, Any], vault: str) -> str:
         stdout=subprocess.PIPE,
         stderr=subprocess.PIPE,
         text=True,
-    ).communicate(input=item_json)
+    )
+    stdout, stderr = import_process.communicate(input=item_json)
 
-    if stderr:
+    if import_process.returncode != 0:
         raise RuntimeError(stderr)
 
     return json.loads(stdout)["id"]
@@ -376,7 +386,7 @@ def import_attachments(attachments: List[Dict[str, Any]], item_id: str) -> None:
     """Fetches all attachments for the given item and imports them into 1Password."""
 
     for attachment in attachments:
-        subprocess.run(
+        fetch_process = subprocess.Popen(
             [
                 "bw",
                 "get",
@@ -386,8 +396,14 @@ def import_attachments(attachments: List[Dict[str, Any]], item_id: str) -> None:
                 f"--output=data/attachments/{item_id}/{attachment["fileName"]}",
             ],
             stdout=subprocess.DEVNULL,
+            stderr=subprocess.PIPE,
+            text=True,
         )
-        subprocess.run(
+        stdout, stderr = fetch_process.communicate()
+        if fetch_process.returncode != 0:
+            raise RuntimeError(stderr)
+        
+        attach_process = subprocess.Popen(
             [
                 "op",
                 "--account",
@@ -398,7 +414,33 @@ def import_attachments(attachments: List[Dict[str, Any]], item_id: str) -> None:
                 f"[file]=data/attachments/{item_id}/{attachment["fileName"]}",
             ],
             stdout=subprocess.DEVNULL,
+            stderr=subprocess.PIPE,
+            text=True,
         )
+        stdout, stderr = attach_process.communicate()
+        if attach_process.returncode != 0:
+            raise RuntimeError(stderr)
+
+
+def migrate_item(item: Dict[str, Any]) -> None:
+    """Handles the migration of a single item."""
+
+    # dump item to file in bitwarden format
+    if args.dump:
+        filename = "".join(c for c in item["name"] if c.isalnum() or c == " ").rstrip()
+        dump_item(item, f"data/bitwarden_items/{filename}.json")
+
+    # translate item to 1password format
+    translated_item = translate(item)
+
+    # dump item to file in 1password format
+    if args.dump:
+        dump_item(translated_item, f"data/1password_items/{filename}.json")
+
+    # import item and its attachments into 1password
+    if not args.dry_run:
+        item_id = import_item(translated_item, args.vault)
+        import_attachments(item.get("attachments", []), item_id)
 
 
 if __name__ == "__main__":
@@ -408,46 +450,32 @@ if __name__ == "__main__":
     items = fetch_items(args.input_id)
     print(f"Found {len(items)} items.")
 
-    print("Importing items...")
-    for item in tqdm(items):
-        try:
-            # dump item to file in bitwarden format
-            if args.dump:
-                filename = "".join(
-                    c for c in item["name"] if c.isalnum() or c == " "
-                ).rstrip()
-                dump_item(item, f"data/bitwarden_items/{filename}.json")
-
-            # translate item to 1password format
+    print("\nImporting items...")
+    while len(items) > 0:
+        remaining_items = []
+        for item in tqdm(items):
             try:
-                translated_item = translate(item)
+                migrate_item(item)
+
             except KeyError as e:
-                print(f"ERROR: Item {item.get('name', '')} has no {e}. Skipping.")
+                print(f"ERROR: Item {item.get('name', '')} has no {e}.")
+                print("Skipping this item.")
                 continue
-
-            # dump item to file in 1password format
-            if args.dump:
-                dump_item(translated_item, f"data/1password_items/{filename}.json")
-
-            # import item and its attachments into 1password
-            if not args.dry_run:
-                try:
-                    item_id = import_item(translated_item, args.vault)
-                except RuntimeError as e:
-                    print(
-                        f"ERROR: Could not import item {item.get('name', '')} ({e}). Skipping."
-                    )
+            except Exception as e:
+                print(f"ERROR: Could not import item {item.get('name', '')} ({e}).")
+                if input("\nShould this item be skipped? (y/n) ").lower() == "y":
+                    print("Skipping this item.")
                     continue
-                import_attachments(item.get("attachments", []), item_id)
+                else:
+                    print("Trying again later.")
+                    remaining_items.append(item)
 
-        except Exception as e:
-            print(
-                f"ERROR: Unexpected error ({e}). Skipping item {item.get('name', '')}"
-            )
-            continue
+        if len(remaining_items) > 0:
+            print(f"\n\nRetrying {len(remaining_items)} remaining items...")
+        items = remaining_items
 
     if args.cleanup:
-        print("Cleaning up...")
+        print("\nCleaning up...")
         os.system("rm -rf data")
 
     print("\nDone.")
