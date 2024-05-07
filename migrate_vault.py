@@ -45,7 +45,8 @@ def fetch_items(collection_id: str) -> List[Dict[str, Any]]:
     """Fetches all items within a collection using the Bitwarden CLI."""
 
     items = subprocess.check_output(
-        ["bw", "list", "items", f"--collectionid={collection_id}"]
+        ["bw", "list", "items", f"--collectionid={collection_id}"],
+        stderr=subprocess.DEVNULL,
     )
     items = json.loads(items)
     return items
@@ -386,6 +387,7 @@ def import_attachments(attachments: List[Dict[str, Any]], item_id: str) -> None:
                 f"--output=data/attachments/{item_id}/{attachment["fileName"]}",
             ],
             stdout=subprocess.DEVNULL,
+            stderr=subprocess.DEVNULL,
         )
         subprocess.run(
             [
