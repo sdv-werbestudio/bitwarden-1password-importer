@@ -1,8 +1,17 @@
 #!/bin/bash
 # This script installs all necessary dependencies and runs the migrate_vault.py script on macOS.
 
+clear
+echo ""
 echo "Dieses Skript importiert deine Passwörter, Notizen, etc. aus deinem Bitwarden-Tresor in deinen perönlichen 1Password-Vault."
+echo ""
 read -p "Drücke Enter, um fortzufahren..."
+
+clear
+echo ""
+echo "Das Skript wird nun alles für den Import vorbereiten. Dies kann einige Zeit dauern."
+sleep 5
+echo ""
 
 # Install Homebrew if not already installed
 if ! command -v brew &> /dev/null; then
@@ -22,7 +31,11 @@ pip3 install -r requirements.txt
 # Authenticate Bitwarden
 if ! bw login --check; then
     clear
+    echo ""
     echo "Bitte authentifiziere dich bei Bitwarden:"
+    echo ""
+    echo "Hinweis: Um deine client_id und client_secret zu finden, gehe auf https://vault.bitwarden.com/#/settings/security/security-keys und klicke unten auf 'API-Schlüssel anzeigen'."
+    echo ""
     until bw login --apikey; do
         echo ""
     done
@@ -30,6 +43,7 @@ if ! bw login --check; then
 fi
 if ! bw unlock --check; then
     clear
+    echo ""
     echo "Bitte entsperre deinen Bitwarden-Tresor:"
     until export BW_SESSION=$(bw unlock --raw); do
         echo ""
@@ -39,6 +53,7 @@ fi
 # Authenticate 1Password
 until [[ $(op account list | wc -l) -ge 1 ]]; do
     clear
+    echo ""
     echo "Bitte aktiviere die 1Password-CLI integration:"
     echo ""
     echo "  1. Öffne die 1Password-App"
@@ -50,6 +65,7 @@ until [[ $(op account list | wc -l) -ge 1 ]]; do
 done
 clear
 if [[ $(op account list | wc -l) -ge 2 ]]; then
+    echo ""
     echo "Bitte wähle, welcher 1Password-Account verwendet werden soll:"
     echo ""
     op account list
@@ -61,8 +77,16 @@ else
 fi
 
 # Run Python script
-read -p "Drücke Enter, um fortzufahren..." # TODO: Remove this line
-python3 migrate_vault.py --dry-run null $ACCOUNT_ID Employee
+clear
+echo ""
+if ! python3 migrate_vault.py --dry-run null $ACCOUNT_ID Employee; then
+    echo ""
+    echo "Es ist ein Fehler Aufgetreten! Bitte kontaktiere einen Administrator."
+    exit 1
+fi
+
+echo ""
+echo "Der Import wurde erfolgreich abgeschlossen!"
 
 # Clean up
 bw lock
