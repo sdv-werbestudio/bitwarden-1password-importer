@@ -15,6 +15,10 @@ def parse_args() -> Namespace:
     )
     parser.add_argument("input_id", help="the ID of the Bitwarden collection to import")
     parser.add_argument(
+        "account",
+        help="the account shorthand, sign-in address, account ID, or user ID of the 1Password account to use",
+    )
+    parser.add_argument(
         "vault", help="the name or ID of the 1Password vault to import into"
     )
     parser.add_argument(
@@ -302,7 +306,7 @@ def translate_month_year_field(month, year) -> str:
     Returns:
         str: Format "YYYY/MM
     """
-    
+
     if not month or not year:
         return ""
 
@@ -345,7 +349,17 @@ def import_item(item: Dict[str, Any], vault: str) -> str:
 
     item_json = json.dumps(item, indent=None)
     stdout, stderr = subprocess.Popen(
-        ["op", "item", "create", "--vault", vault, "--format=json", "-"],
+        [
+            "op",
+            "--account",
+            args.account,
+            "item",
+            "create",
+            "--vault",
+            vault,
+            "--format=json",
+            "-",
+        ],
         stdin=subprocess.PIPE,
         stdout=subprocess.PIPE,
         stderr=subprocess.PIPE,
@@ -376,6 +390,8 @@ def import_attachments(attachments: List[Dict[str, Any]], item_id: str) -> None:
         subprocess.run(
             [
                 "op",
+                "--account",
+                args.account,
                 "item",
                 "edit",
                 item_id,
@@ -423,9 +439,11 @@ if __name__ == "__main__":
                     )
                     continue
                 import_attachments(item.get("attachments", []), item_id)
-            
+
         except Exception as e:
-            print(f"ERROR: Unexpected error ({e}). Skipping item {item.get('name', '')}")
+            print(
+                f"ERROR: Unexpected error ({e}). Skipping item {item.get('name', '')}"
+            )
             continue
 
     if args.cleanup:
