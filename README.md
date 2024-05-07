@@ -16,9 +16,11 @@ It currently supports the following Bitwarden object types:
 ## Usage
 To migrate an arbitrary collection use
 ```console
-python migrate_vault.py BITWARDEN_COLLECTION 1PASSWORD_VAULT
+python migrate_vault.py BITWARDEN_COLLECTION 1PASSWORD_ACCOUNT 1PASSWORD_VAULT
 ``` 
-where `BITWARDEN_COLLECTION` is the ID of the Bitwarden collection to read from and `1PASSWORD_VAULT` is the name or ID of the 1Password vault to import into.
+- `BITWARDEN_COLLECTION` is the ID of the Bitwarden collection to read from
+- `1PASSWORD_ACCOUNT` is the account shorthand, sign-in address, account ID, or user ID of the 1Password account to use
+- `1PASSWORD_VAULT` is the name or ID of the 1Password vault to import into
 
 For advanced options see `python migrate_vault.py --help`.
 
@@ -30,5 +32,5 @@ curl -L https://github.com/sdv-werbestudio/bitwarden-1password-importer/archive/
 
 To manually import your personal vault, you can use:
 ```console
-python migrate_vault.py null Employee
+python migrate_vault.py null my.1password.com Employee
 ```
