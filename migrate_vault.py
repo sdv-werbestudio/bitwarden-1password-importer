@@ -115,7 +115,7 @@ def translate_login(item: Dict[str, Any]) -> Dict[str, Any]:
             {
                 "id": "totp",
                 "type": "OTP",
-                "value": f"otpauth://totp/{item['name']}:{item["login"]["username"]}?secret={item["login"]["totp"]}",
+                "value": f"otpauth://totp/{item['name']}:{item['login']['username']}?secret={item['login']['totp']}",
             }
         )
 
