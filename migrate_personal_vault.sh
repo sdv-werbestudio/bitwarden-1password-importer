@@ -26,7 +26,8 @@ if ! command -v brew &> /dev/null; then
     export PATH="/opt/homebrew/bin:$PATH"
 fi
 if ! command -v brew &> /dev/null; then
-    echo "Homebrew could not be installed. Please install Homebrew manually."
+    echo "Es ist ein Fehler Aufgetreten! Bitte kontaktiere einen Administrator."
+    echo "Fehler: Homebrew konnte nicht installiert werden."
     exit 1
 fi
 brew update
