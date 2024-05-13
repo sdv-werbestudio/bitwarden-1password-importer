@@ -21,6 +21,14 @@ if ! command -v brew &> /dev/null; then
     echo "Homebrew is not installed. Installing Homebrew..."
     /bin/bash -c "$(curl -fsSL https://raw.githubusercontent.com/Homebrew/install/HEAD/install.sh)"
 fi
+if ! command -v brew &> /dev/null; then
+    # add homebrew to PATH
+    export PATH="/opt/homebrew/bin:$PATH"
+fi
+if ! command -v brew &> /dev/null; then
+    echo "Homebrew could not be installed. Please install Homebrew manually."
+    exit 1
+fi
 brew update
 
 # Install Dependencies
